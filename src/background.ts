@@ -56,7 +56,7 @@ const deleteFile = async (fileId: string) => {
   return response;
 };
 
-const main = async () => {
+const startup = async () => {
   try {
     await getAuthToken();
     if (!authToken) throw new Error("Failed to get auth token");
@@ -73,4 +73,13 @@ const main = async () => {
   }
 };
 
-main();
+startup();
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log(message);
+  if (message.action === "saveDrawing") {
+    const drawingData = message.data;
+    // Convert drawingData to Blob or appropriate format for Google Drive
+    // Then, upload it using Google Drive API
+    console.log(drawingData);
+  }
+});
