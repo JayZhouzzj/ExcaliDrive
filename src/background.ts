@@ -92,6 +92,16 @@ const createDrawingFile = async (fileName: string, drawingData: string) => {
   return await response.json();
 };
 
+const downloadFile = async (fileId: string) => {
+  const response = await fetch(`${driveApiUrl}/files/${fileId}?alt=media`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+  if (!response.ok) throw new Error("Failed to download file");
+  return await response.text(); // Assuming the file is in text format (JSON)
+};
+
 const startup = async () => {
   try {
     await getAuthToken();
@@ -114,12 +124,44 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === "saveDrawing") {
     try {
       const drawingData = message.data;
-      const fileName = "TmpExcalidraw.json"; // or any other name you wish to use
+      const fileName = "TmpExcalidraw.excalidrive"; // or any other name you wish to use
       const file = await createDrawingFile(fileName, drawingData);
       console.log("File created: ", file);
       sendResponse({ status: "success", fileId: file.id });
     } catch (error) {
       console.error("Error in creating file: ", error);
+      sendResponse({ status: "error", error: error });
+    }
+  } else if (message.action === "loadDrawing") {
+    try {
+      const query = "name contains '.excalidraw'";
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+          query
+        )}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error("Failed to list Excalidraw files");
+      const files = await response.json();
+      if (files.files.length > 0) {
+        // Take the first file in the list
+        const firstFileId = files.files[0].id;
+        const fileData = await downloadFile(firstFileId);
+        if (sender.tab && sender.tab.id != undefined) {
+          chrome.tabs.sendMessage(sender.tab.id, {
+            action: "loadDrawingData",
+            data: fileData,
+          });
+        }
+      } else {
+        console.log("No Excalidraw files found.");
+      }
+    } catch (error) {
+      console.error("Error in loading file: ", error);
       sendResponse({ status: "error", error: error });
     }
   }
