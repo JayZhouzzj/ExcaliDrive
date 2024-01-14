@@ -1,6 +1,5 @@
 function sendExcalidrawDataToBackground() {
   const excalidrawData = localStorage.getItem("excalidraw");
-  console.log(excalidrawData);
   if (excalidrawData) {
     chrome.runtime.sendMessage({ action: "saveDrawing", data: excalidrawData });
   }

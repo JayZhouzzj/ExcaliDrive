@@ -56,6 +56,42 @@ const deleteFile = async (fileId: string) => {
   return response;
 };
 
+const createDrawingFile = async (fileName: string, drawingData: string) => {
+  // Convert the JSON string to a Blob
+  const blob = new Blob([drawingData], { type: "application/json" });
+
+  // Create a new FormData object
+  const formData = new FormData();
+  formData.append(
+    "metadata",
+    new Blob(
+      [
+        JSON.stringify({
+          name: fileName,
+          mimeType: "application/json", // or 'application/vnd.google-apps.document' if you want to create a Google Docs file
+        }),
+      ],
+      { type: "application/json" }
+    )
+  );
+  formData.append("file", blob);
+
+  // Make the POST request to the Google Drive API
+  const response = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+    {
+      method: "POST",
+      headers: new Headers({
+        Authorization: `Bearer ${authToken}`,
+      }),
+      body: formData,
+    }
+  );
+
+  if (!response.ok) throw new Error("Failed to create file");
+  return await response.json();
+};
+
 const startup = async () => {
   try {
     await getAuthToken();
@@ -74,12 +110,18 @@ const startup = async () => {
 };
 
 startup();
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log(message);
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === "saveDrawing") {
-    const drawingData = message.data;
-    // Convert drawingData to Blob or appropriate format for Google Drive
-    // Then, upload it using Google Drive API
-    console.log(drawingData);
+    try {
+      const drawingData = message.data;
+      const fileName = "TmpExcalidraw.json"; // or any other name you wish to use
+      const file = await createDrawingFile(fileName, drawingData);
+      console.log("File created: ", file);
+      sendResponse({ status: "success", fileId: file.id });
+    } catch (error) {
+      console.error("Error in creating file: ", error);
+      sendResponse({ status: "error", error: error });
+    }
   }
+  return true;
 });
