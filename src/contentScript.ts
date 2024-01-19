@@ -1,13 +1,13 @@
-function sendExcalidrawDataToBackground() {
+const sendExcalidrawDataToBackground = () => {
   const excalidrawData = localStorage.getItem("excalidraw");
   if (excalidrawData) {
     chrome.runtime.sendMessage({ action: "saveDrawing", data: excalidrawData });
   }
-}
-function requestExcalidrawDataFromBackground() {
+};
+const requestExcalidrawDataFromBackground = () => {
   chrome.runtime.sendMessage({ action: "loadDrawing" });
-}
-function injectSaveButton() {
+};
+const injectSaveButton = () => {
   const button = document.createElement("button");
   button.textContent = "Save to Google Drive";
   button.setAttribute(
@@ -21,8 +21,8 @@ function injectSaveButton() {
   });
 
   document.body.appendChild(button);
-}
-function injectLoadButton() {
+};
+const injectLoadButton = () => {
   const loadButton = document.createElement("button");
   loadButton.textContent = "Load from Google Drive";
   loadButton.setAttribute(
@@ -35,7 +35,7 @@ function injectLoadButton() {
   });
 
   document.body.appendChild(loadButton);
-}
+};
 injectSaveButton();
 injectLoadButton();
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {

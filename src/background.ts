@@ -1,4 +1,5 @@
 let authToken: string | null = null;
+let fileId: string | null = null;
 
 const getAuthToken = async (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -57,10 +58,8 @@ const deleteFile = async (fileId: string) => {
 };
 
 const createDrawingFile = async (fileName: string, drawingData: string) => {
-  // Convert the JSON string to a Blob
   const blob = new Blob([drawingData], { type: "application/json" });
 
-  // Create a new FormData object
   const formData = new FormData();
   formData.append(
     "metadata",
@@ -76,7 +75,6 @@ const createDrawingFile = async (fileName: string, drawingData: string) => {
   );
   formData.append("file", blob);
 
-  // Make the POST request to the Google Drive API
   const response = await fetch(
     "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
     {
@@ -89,6 +87,27 @@ const createDrawingFile = async (fileName: string, drawingData: string) => {
   );
 
   if (!response.ok) throw new Error("Failed to create file");
+  return await response.json();
+};
+
+const updateDrawingFile = async (fileId: string, drawingData: string) => {
+  const blob = new Blob([drawingData], { type: "application/json" });
+
+  const formData = new FormData();
+  formData.append("file", blob);
+
+  const response = await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`,
+    {
+      method: "PATCH",
+      headers: new Headers({
+        Authorization: `Bearer ${authToken}`,
+      }),
+      body: formData,
+    }
+  );
+
+  if (!response.ok) throw new Error("Failed to update file");
   return await response.json();
 };
 
@@ -150,6 +169,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       if (files.files.length > 0) {
         // Take the first file in the list
         const firstFileId = files.files[0].id;
+        fileId = firstFileId;
         const fileData = await downloadFile(firstFileId);
         if (sender.tab && sender.tab.id != undefined) {
           chrome.tabs.sendMessage(sender.tab.id, {
