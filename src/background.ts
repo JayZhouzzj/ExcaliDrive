@@ -65,6 +65,10 @@ const updateDrawingFile = async (fileId: string, drawingData: string) => {
   const blob = new Blob([drawingData], { type: "application/json" });
 
   const formData = new FormData();
+  formData.append(
+    "metadata",
+    new Blob([JSON.stringify({})], { type: "application/json" })
+  );
   formData.append("file", blob);
 
   const response = await fetch(
@@ -78,7 +82,10 @@ const updateDrawingFile = async (fileId: string, drawingData: string) => {
     }
   );
 
-  if (!response.ok) throw new Error("Failed to update file");
+  if (!response.ok)
+    throw new Error(
+      `Failed to update file: ${response.status} (${response.statusText})`
+    );
   return await response.json();
 };
 
@@ -97,7 +104,6 @@ const startup = async () => {
     await getAuthToken();
     if (!authToken) throw new Error("Failed to get auth token");
     const fileList = await listFiles();
-    console.log(fileList);
   } catch (error) {
     console.error("Error:", error);
   }
@@ -108,10 +114,14 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === "saveDrawing") {
     try {
       const drawingData = message.data;
-      const fileName = "TmpExcalidraw.excalidrive"; // or any other name you wish to use
-      const file = await createDrawingFile(fileName, drawingData);
-      console.log("File created: ", file);
-      sendResponse({ status: "success", fileId: file.id });
+      if (fileId == null) {
+        const fileName = "TmpExcalidraw.excalidrive"; // or any other name you wish to use
+        const file = await createDrawingFile(fileName, drawingData);
+        sendResponse({ status: "created", fileId: file.id });
+      } else {
+        const file = await updateDrawingFile(fileId, drawingData);
+        sendResponse({ status: "updated", fileId: file.id });
+      }
     } catch (error) {
       console.error("Error in creating file: ", error);
       sendResponse({ status: "error", error: error });
