@@ -28,35 +28,6 @@ const listFiles = async () => {
   return await response.json();
 };
 
-const createFile = async (fileName: string) => {
-  const fileMetadata = {
-    name: fileName,
-    mimeType: "application/vnd.google-apps.document",
-  };
-
-  const response = await fetch(`${driveApiUrl}/files`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(fileMetadata),
-  });
-  if (!response.ok) throw new Error("Failed to create file");
-  return await response.json();
-};
-
-const deleteFile = async (fileId: string) => {
-  const response = await fetch(`${driveApiUrl}/files/${fileId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
-  });
-  if (!response.ok) throw new Error("Failed to delete file");
-  return response;
-};
-
 const createDrawingFile = async (fileName: string, drawingData: string) => {
   const blob = new Blob([drawingData], { type: "application/json" });
 
@@ -127,12 +98,6 @@ const startup = async () => {
     if (!authToken) throw new Error("Failed to get auth token");
     const fileList = await listFiles();
     console.log(fileList);
-
-    // Test to create and delete file
-    // const newFile = await createFile("Foo");
-    // console.log("Created File:", newFile);
-    // await deleteFile(newFile.id);
-    // console.log("Deleted File:", newFile.id);
   } catch (error) {
     console.error("Error:", error);
   }
