@@ -128,7 +128,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
   } else if (message.action === "loadDrawing") {
     try {
-      const query = "name contains '.excalidraw'";
+      const query = "name contains '.excalidrive'";
       const response = await fetch(
         `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
           query
@@ -150,6 +150,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
           chrome.tabs.sendMessage(sender.tab.id, {
             action: "loadDrawingData",
             data: fileData,
+            fileId: fileId,
           });
         }
       } else {

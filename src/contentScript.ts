@@ -41,6 +41,7 @@ injectLoadButton();
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === "loadDrawingData") {
     localStorage.setItem("excalidraw", request.data);
+    localStorage.setItem("excalidrive-fileId", request.fileId);
     location.reload(); // Reload the page to see the new drawing
   }
 });
